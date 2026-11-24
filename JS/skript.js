@@ -28,6 +28,86 @@ const typUebersetzung = {
     dark: 'Unlicht', steel: 'Stahl'
 };
 
+// Übersetzungen für alternative Pokémon-Formen (DE & EN)
+const formUebersetzung = {
+    plant:    { de: 'Pflanzenumhang',    en: 'Plant Cloak' },
+    sandy:    { de: 'Sandumhang',        en: 'Sandy Cloak' },
+    trash:    { de: 'Lumpenumhang',      en: 'Trash Cloak' },
+    alola:    { de: 'Alola-Form',        en: 'Alolan Form' },
+    galar:    { de: 'Galar-Form',        en: 'Galarian Form' },
+    hisui:    { de: 'Hisui-Form',        en: 'Hisuian Form' },
+    paldea:   { de: 'Paldea-Form',       en: 'Paldean Form' },
+    mega:     { de: 'Mega-Form',         en: 'Mega Form' },
+    'mega-x': { de: 'Mega-Form X',       en: 'Mega Form X' },
+    'mega-y': { de: 'Mega-Form Y',       en: 'Mega Form Y' },
+    gmax:     { de: 'Gigadynamax',       en: 'Gigantamax' },
+    altered:  { de: 'Wandelform',        en: 'Altered Forme' },
+    origin:   { de: 'Urform',            en: 'Origin Forme' },
+    land:     { de: 'Landform',          en: 'Land Forme' },
+    sky:      { de: 'Zenitform',         en: 'Sky Forme' },
+    normal:   { de: 'Normalform',        en: 'Normal Forme' },
+    attack:   { de: 'Angriffsform',      en: 'Attack Forme' },
+    defense:  { de: 'Verteidigungsform', en: 'Defense Forme' },
+    speed:    { de: 'Initiativeform',    en: 'Speed Forme' },
+    heat:     { de: 'Hitze-Form',        en: 'Heat Form' },
+    wash:     { de: 'Wasch-Form',        en: 'Wash Form' },
+    frost:    { de: 'Frost-Form',        en: 'Frost Form' },
+    fan:      { de: 'Wirbel-Form',       en: 'Fan Form' },
+    mow:      { de: 'Schneid-Form',      en: 'Mow Form' },
+    sunny:    { de: 'Sonnenform',        en: 'Sunny Form' },
+    rainy:    { de: 'Regenform',         en: 'Rainy Form' },
+    snowy:    { de: 'Schneeform',        en: 'Snowy Form' },
+    male:     { de: 'Männlich',          en: 'Male' },
+    female:   { de: 'Weiblich',          en: 'Female' }
+};
+
+function formatiereFormLabel(apiFormName, basisSpeciesName, isDefault) {
+    const prefix = `${basisSpeciesName}-`;
+    const suffix = apiFormName.startsWith(prefix) ? apiFormName.slice(prefix.length) : '';
+
+    let label = '';
+    if (!suffix) {
+        return aktuelleSprache === 'de' ? 'Ursprungsform' : 'Base Form';
+    } else if (formUebersetzung[suffix]) {
+        label = formUebersetzung[suffix][aktuelleSprache];
+    } else {
+        label = suffix
+            .split('-')
+            .map(wort => wort.charAt(0).toUpperCase() + wort.slice(1))
+            .join(' ');
+    }
+
+    if (isDefault) {
+        return `${label} (${aktuelleSprache === 'de' ? 'Ursprung' : 'Base'})`;
+    }
+    return label;
+}
+
+// Übersetzungen für die 6 Basiswerte (DE & EN)
+const statUebersetzung = {
+    hp:                { de: 'KP',           en: 'HP' },
+    attack:            { de: 'Angriff',      en: 'Attack' },
+    defense:           { de: 'Verteidigung', en: 'Defense' },
+    'special-attack':  { de: 'Sp.-Angriff',  en: 'Sp. Atk' },
+    'special-defense': { de: 'Sp.-Vert.',    en: 'Sp. Def' },
+    speed:             { de: 'Initiative',   en: 'Speed' }
+};
+
+// Filtert reine Deko- und Boss-Varianten heraus (Totem, Kappen-/Cosplay-Pikachu, Reit-Formen)
+const dekoFormMuster = [
+    '-totem', '-cap', '-cosplay', '-rock-star', '-belle',
+    '-pop-star', '-phd', '-libre', '-starter',
+    '-limited-build', '-sprinting-build', '-swimming-build', '-gliding-build',
+    '-low-power-mode', '-drive-mode', '-aquatic-mode', '-glide-mode'
+];
+
+function holeSinnvolleVarianten(speciesDaten) {
+    return (speciesDaten.varieties || []).filter(v => {
+        const name = v.pokemon.name;
+        return !dekoFormMuster.some(muster => name.includes(muster));
+    });
+}
+
 // Beispiel-Gegner pro Typ für direktes Aufploppen im Modal (verhindert unnötige API-Anfragen)
 const typBeispielGegner = {
     normal:   { api: 'snorlax',   de: 'Relaxo',   en: 'Snorlax' },
@@ -181,7 +261,7 @@ async function ladeGeneration(genId) {
     kartenRaster.innerHTML = '';
     let limit = 0; let offset = 0;
 
-    switch (genId) {  
+    switch (genId) {
         case '1': limit = 151; offset = 0; break;
         case '2': limit = 100; offset = 151; break;
         case '3': limit = 135; offset = 251; break;
@@ -234,7 +314,6 @@ function zeigePokemon(pokemonListe) {
         return;
     }
 
-    const textEntwicklungen = aktuelleSprache === 'de' ? 'Entwicklungen' : 'Evolutions';
     const textZurueck = aktuelleSprache === 'de' ? 'Zurück' : 'Back';
 
     pokemonListe.forEach(pokemon => {
@@ -251,20 +330,21 @@ function zeigePokemon(pokemonListe) {
             const eng = typInfo.type.name;
             const anzeigeTyp = aktuelleSprache === 'de' ? (typUebersetzung[eng] || eng) : eng;
             typHTML += `
-                <button type="button" class="typ-badge typ-badge-btn typ-${eng} text-capitalize" 
-                        onclick="event.stopPropagation(); oeffneTypKarte('${eng}')" 
+                <button type="button" class="typ-badge typ-badge-btn typ-${eng} text-capitalize"
+                        onclick="event.stopPropagation(); oeffneTypKarte('${eng}')"
                         data-bs-toggle="tooltip"
                         data-bs-placement="bottom"
-                        title="${aktuelleSprache === 'de' ? 'Klicken für Typ-Erklärung' : 'Click for type info'}">
+                        data-bs-title="${aktuelleSprache === 'de' ? 'Klicken für Typ-Erklärung' : 'Click for type info'}">
                     ${anzeigeTyp}
                 </button>`;
         });
 
         spalte.innerHTML = `
-            <div class="pokemon-karte text-center" id="karte-${pokemon.id}" onclick="dreheKarte(${pokemon.id}, '${pokemon.evolutionUrl}')">
+            <div class="pokemon-karte text-center" id="karte-${pokemon.id}">
                 <div class="karte-innen">
                     <!-- VORDERSEITE -->
-                    <div class="karte-vorne d-flex flex-column align-items-center justify-content-center">
+                    <div class="karte-vorne d-flex flex-column align-items-center justify-content-center"
+                         onclick="dreheKarte(${pokemon.id}, '${pokemon.evolutionUrl}')">
                         <div class="d-flex flex-column align-items-center w-100"
                             data-bs-toggle="tooltip"
                             data-bs-title="${aktuelleSprache === 'de' ? 'Klicken um mehr zu erfahren' : 'Click to learn more'}">
@@ -274,16 +354,30 @@ function zeigePokemon(pokemonListe) {
                         </div>
                         <div>${typHTML}</div>
                     </div>
-                    
-                    <!-- RÜCKSEITE -->
-                    <div class="karte-hinten d-flex flex-column p-3">
-                        <h6 class="fw-bold text-danger mb-2">${textEntwicklungen}</h6>
-                        <img src="${bildUrl}" alt="${anzeigeName}" class="pulsier-figur mx-auto mb-2">
-                        <div id="entwicklungen-${pokemon.id}" class="d-flex flex-column gap-2 w-100 overflow-auto mb-2" style="max-height: 150px;">
+
+                   <!-- RÜCKSEITE -->
+                    <div class="karte-hinten d-flex flex-column p-3"
+                         onclick="document.getElementById('karte-${pokemon.id}').classList.remove('gedreht');">
+                        <h6 class="fw-bold text-danger text-capitalize mb-1">${anzeigeName}</h6>
+                        <img src="${bildUrl}" alt="${anzeigeName}" class="pulsier-figur mx-auto mb-2"
+                             style="cursor: pointer;"
+                             title="${aktuelleSprache === 'de' ? 'Klicken für Details' : 'Click for details'}"
+                             onclick="event.stopPropagation(); ladeUndOeffneModal('${pokemon.name}', this);">
+
+                        <button type="button" class="btn btn-danger btn-sm w-100 mb-2"
+                                onclick="event.stopPropagation(); ladeUndOeffneModal('${pokemon.name}', this);">
+                            ${aktuelleSprache === 'de' ? 'Details ansehen' : 'View details'}
+                        </button>
+
+                        <div id="entwicklungen-${pokemon.id}"
+                             class="d-flex flex-column gap-2 w-100 overflow-auto mb-2"
+                             style="max-height: 120px;"
+                             onclick="event.stopPropagation();">
                             <span class="spinner-border spinner-border-sm mx-auto text-danger" role="status"></span>
                         </div>
-                        
-                        <button class="btn btn-secondary btn-sm w-100 mt-auto" 
+
+                        <button type="button" class="btn btn-secondary btn-sm w-100 mt-auto"
+                                aria-label="${aktuelleSprache === 'de' ? `Zurück zur Vorderseite von ${anzeigeName}` : `Back to front of ${anzeigeName}`}"
                                 onclick="event.stopPropagation(); document.getElementById('karte-${pokemon.id}').classList.remove('gedreht');">
                             ${textZurueck} ↩
                         </button>
@@ -293,37 +387,38 @@ function zeigePokemon(pokemonListe) {
         `;
         kartenRaster.appendChild(spalte);
     });
+
     // Alte Tooltips entfernen, falls beim Filtern gerade einer offen war
     document.querySelectorAll('.tooltip').forEach(t => t.remove());
 
     // Alle Bootstrap-Tooltips im Raster schnell aktivieren
     kartenRaster.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
         new window.bootstrap.Tooltip(el, {
-            delay: { show: 0, hide: 50 }, // 0ms statt 1-2 Sekunden
+            delay: { show: 0, hide: 50 },
             trigger: 'hover'
         });
     });
-
 }
 
-
-// --- E8: Karte drehen und Entwicklungen übersetzt laden ---
+// --- E8: Karte drehen und Dropdowns für Entwicklungen & Formen laden ---
 async function dreheKarte(pokemonId, evolutionUrl) {
     document.querySelectorAll('.tooltip').forEach(t => t.remove());
     const karte = document.getElementById(`karte-${pokemonId}`);
     const container = document.getElementById(`entwicklungen-${pokemonId}`);
 
-    karte.classList.toggle('gedreht');
+    karte.classList.add('gedreht');
     if (container.dataset.geladen === "true") return;
 
     try {
-        if (!evolutionUrl || evolutionUrl === 'undefined' || evolutionUrl === 'null') {
-            const speciesAntwort = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}`);
-            const speciesDaten = await speciesAntwort.json();
-            evolutionUrl = speciesDaten.evolution_chain.url;
-        }
+        // Species-Daten laden (liefert Evolution-Chain UND alle alternativen Formen)
+        const basisSpeciesAntwort = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}`);
+        const basisSpeciesDaten = await basisSpeciesAntwort.json();
 
-        const antwort = await fetch(evolutionUrl);
+        const zielEvoUrl = (!evolutionUrl || evolutionUrl === 'undefined' || evolutionUrl === 'null')
+            ? basisSpeciesDaten.evolution_chain.url
+            : evolutionUrl;
+
+        const antwort = await fetch(zielEvoUrl);
         const daten = await antwort.json();
 
         let alleEntwicklungen = [];
@@ -332,8 +427,11 @@ async function dreheKarte(pokemonId, evolutionUrl) {
             const speciesAntwort = await fetch(knoten.species.url);
             const speciesDaten = await speciesAntwort.json();
             const deObj = speciesDaten.names.find(n => n.language.name === 'de');
+            // Standard-Form für API-Abruf nutzen (verhindert 404 bei z.B. Burmadame / wormadam)
+            const standardVariante = speciesDaten.varieties.find(v => v.is_default);
 
             alleEntwicklungen.push({
+                apiName: standardVariante ? standardVariante.pokemon.name : knoten.species.name,
                 enName: knoten.species.name,
                 deName: deObj ? deObj.name : knoten.species.name
             });
@@ -344,20 +442,102 @@ async function dreheKarte(pokemonId, evolutionUrl) {
         }
         await sucheEntwicklungen(daten.chain);
 
-        container.innerHTML = '';
-        alleEntwicklungen.forEach(entwicklung => {
-            const anzeigeName = aktuelleSprache === 'de' ? entwicklung.deName : entwicklung.enName;
+        // Sinnvolle Formen aus varieties auslesen (ohne optisch identische Totem-Formen)
+        const varianten = holeSinnvolleVarianten(basisSpeciesDaten);
+        const ursprungVariante = varianten.find(v => v.is_default) || varianten[0];
+        const ursprungApiName = ursprungVariante ? ursprungVariante.pokemon.name : basisSpeciesDaten.name;
 
-            const btn = document.createElement('button');
-            btn.className = 'btn btn-outline-danger btn-sm text-capitalize w-100';
-            btn.innerText = anzeigeName;
-            btn.onclick = (event) => {
-                event.stopPropagation();
-                ladeUndOeffneModal(entwicklung.enName);
+        container.innerHTML = '';
+
+        // 1. DROPDOWN: ENTWICKLUNGEN
+        const evoDropdown = document.createElement('div');
+        evoDropdown.className = 'dropdown w-100';
+
+        const evoToggle = document.createElement('button');
+        evoToggle.type = 'button';
+        evoToggle.className = 'btn btn-outline-danger btn-sm dropdown-toggle w-100';
+        evoToggle.setAttribute('data-bs-toggle', 'dropdown');
+        evoToggle.setAttribute('data-bs-display', 'static');
+        evoToggle.setAttribute('aria-expanded', 'false');
+        evoToggle.innerText = aktuelleSprache === 'de'
+            ? `Entwicklungen (${alleEntwicklungen.length})`
+            : `Evolutions (${alleEntwicklungen.length})`;
+
+        const evoMenu = document.createElement('ul');
+        evoMenu.className = 'dropdown-menu w-100 position-static mt-1 shadow-sm';
+        evoMenu.style.minWidth = '0';
+
+        alleEntwicklungen.forEach(entwicklung => {
+            const li = document.createElement('li');
+            const itemBtn = document.createElement('button');
+            itemBtn.type = 'button';
+            itemBtn.className = 'dropdown-item text-capitalize small py-1';
+            itemBtn.innerText = aktuelleSprache === 'de' ? entwicklung.deName : entwicklung.enName;
+            itemBtn.onclick = () => {
+                ladeUndOeffneModal(entwicklung.apiName, evoToggle);
             };
-            container.appendChild(btn);
+            li.appendChild(itemBtn);
+            evoMenu.appendChild(li);
         });
 
+        evoDropdown.appendChild(evoToggle);
+        evoDropdown.appendChild(evoMenu);
+        container.appendChild(evoDropdown);
+
+        // 2. DROPDOWN: FORMEN
+        const formDropdown = document.createElement('div');
+        formDropdown.className = 'dropdown w-100';
+
+        if (varianten.length > 1) {
+            const formToggle = document.createElement('button');
+            formToggle.type = 'button';
+            formToggle.className = 'btn btn-outline-dark btn-sm dropdown-toggle w-100';
+            formToggle.setAttribute('data-bs-toggle', 'dropdown');
+            formToggle.setAttribute('data-bs-display', 'static');
+            formToggle.setAttribute('aria-expanded', 'false');
+            formToggle.innerText = aktuelleSprache === 'de'
+                ? `Formen (${varianten.length})`
+                : `Forms (${varianten.length})`;
+
+            const formMenu = document.createElement('ul');
+            formMenu.className = 'dropdown-menu w-100 position-static mt-1 shadow-sm';
+            formMenu.style.minWidth = '0';
+
+            varianten.forEach(variante => {
+                const li = document.createElement('li');
+                const itemBtn = document.createElement('button');
+                itemBtn.type = 'button';
+                itemBtn.className = 'dropdown-item small py-1';
+                itemBtn.innerText = formatiereFormLabel(
+                    variante.pokemon.name,
+                    basisSpeciesDaten.name,
+                    variante.is_default
+                );
+                itemBtn.onclick = () => {
+                    if (variante.is_default) {
+                        ladeUndOeffneModal(ursprungApiName, formToggle);
+                    } else {
+                        oeffneFormVergleich(ursprungApiName, variante.pokemon.name, formToggle);
+                    }
+                };
+                li.appendChild(itemBtn);
+                formMenu.appendChild(li);
+            });
+
+            formDropdown.appendChild(formToggle);
+            formDropdown.appendChild(formMenu);
+        } else {
+            const keineFormenBtn = document.createElement('button');
+            keineFormenBtn.type = 'button';
+            keineFormenBtn.className = 'btn btn-outline-secondary btn-sm w-100';
+            keineFormenBtn.disabled = true;
+            keineFormenBtn.innerText = aktuelleSprache === 'de'
+                ? 'Keine weiteren Formen'
+                : 'No other forms';
+            formDropdown.appendChild(keineFormenBtn);
+        }
+
+        container.appendChild(formDropdown);
         container.dataset.geladen = "true";
     } catch (fehler) {
         console.error('Fehler in dreheKarte:', fehler);
@@ -365,12 +545,68 @@ async function dreheKarte(pokemonId, evolutionUrl) {
     }
 }
 
-// --- E6: Modal laden (Einzel- & Vergleichsansicht) ---
+// --- E6: Modal laden (Einzel-, Gegner- & Formen-Vergleichsansicht) ---
 let aktuellesPokemonLinks = null;
 let aktuellesPokemonRechts = null;
+let istFormenVergleich = false;
+let letztesFokusElement = null;
 
-async function ladeUndOeffneModal(suchNameAPI) {
-    schliesseRechts();
+function meldeBarrierefreiStatus(nachricht) {
+    const modalBody = document.querySelector('#pokemonModal .modal-body');
+    if (!modalBody) return;
+    let liveRegion = document.getElementById('modal-a11y-status');
+    if (!liveRegion) {
+        liveRegion = document.createElement('div');
+        liveRegion.id = 'modal-a11y-status';
+        liveRegion.className = 'visually-hidden';
+        liveRegion.setAttribute('role', 'status');
+        liveRegion.setAttribute('aria-live', 'polite');
+        modalBody.prepend(liveRegion);
+    }
+    liveRegion.textContent = '';
+    setTimeout(() => {
+        liveRegion.textContent = nachricht;
+    }, 50);
+}
+
+function aktualisiereModalHeaderZurueckButton(anzeigen) {
+    const header = document.querySelector('#pokemonModal .modal-header');
+    if (!header) return;
+
+    let zurueckBtn = document.getElementById('modalHeaderZurueckBtn');
+
+    if (!anzeigen) {
+        if (zurueckBtn) zurueckBtn.remove();
+        return;
+    }
+
+    const zurueckText = istFormenVergleich
+        ? (aktuelleSprache === 'de' ? '← Zurück zur Ursprungsform' : '← Back to base form')
+        : (aktuelleSprache === 'de' ? '← Vergleich schliessen' : '← Close comparison');
+
+    if (!zurueckBtn) {
+        zurueckBtn = document.createElement('button');
+        zurueckBtn.id = 'modalHeaderZurueckBtn';
+        zurueckBtn.type = 'button';
+        zurueckBtn.className = 'btn btn-light btn-sm ms-3 fw-semibold';
+        zurueckBtn.onclick = () => schliesseRechts(true);
+
+        const titel = document.getElementById('modalHauptTitel');
+        if (titel && titel.nextSibling) {
+            header.insertBefore(zurueckBtn, titel.nextSibling);
+        } else {
+            header.appendChild(zurueckBtn);
+        }
+    }
+
+    zurueckBtn.innerText = zurueckText;
+}
+
+async function ladeUndOeffneModal(suchNameAPI, ausloeserElement = null) {
+    if (ausloeserElement) {
+        letztesFokusElement = ausloeserElement;
+    }
+    schliesseRechts(false);
     aktuellesPokemonLinks = suchNameAPI;
 
     const modalElement = document.getElementById('pokemonModal');
@@ -380,11 +616,110 @@ async function ladeUndOeffneModal(suchNameAPI) {
     await ladePokemonInPanel(suchNameAPI, 'links');
 }
 
+async function oeffneFormVergleich(ursprungApiName, gewaehlteFormApiName, ausloeserElement = null) {
+    if (ausloeserElement) {
+        letztesFokusElement = ausloeserElement;
+    }
+    const dialog = document.getElementById('pokemonModalDialog');
+    const linksPanel = document.getElementById('modalLinks');
+    const rechtsPanel = document.getElementById('modalRechts');
+
+    istFormenVergleich = true;
+    aktualisiereModalHeaderZurueckButton(true);
+    dialog.classList.add('modal-xl');
+    linksPanel.className = 'col-12 col-lg-6';
+    rechtsPanel.classList.remove('d-none');
+    document.getElementById('modalHauptTitel').innerText = aktuelleSprache === 'de'
+        ? 'Formen-Vergleich'
+        : 'Form Comparison';
+
+    const modalElement = document.getElementById('pokemonModal');
+    const bsModal = window.bootstrap.Modal.getOrCreateInstance(modalElement);
+    bsModal.show();
+
+    const linksSchonGeladen = aktuellesPokemonLinks === ursprungApiName && linksPanel.innerHTML.trim() !== '';
+    aktuellesPokemonLinks = ursprungApiName;
+    aktuellesPokemonRechts = gewaehlteFormApiName;
+
+    if (linksSchonGeladen) {
+        await ladePokemonInPanel(gewaehlteFormApiName, 'rechts');
+    } else {
+        await Promise.all([
+            ladePokemonInPanel(ursprungApiName, 'links'),
+            ladePokemonInPanel(gewaehlteFormApiName, 'rechts')
+        ]);
+    }
+
+    const modalBody = document.querySelector('#pokemonModal .modal-body');
+    if (modalBody) modalBody.scrollTo({ top: 0, behavior: 'smooth' });
+
+    const rechtsTitel = rechtsPanel.querySelector('h3');
+    if (rechtsTitel) rechtsTitel.focus();
+    meldeBarrierefreiStatus(
+        aktuelleSprache === 'de'
+            ? 'Ursprungsform und gewählte Form werden jetzt nebeneinander angezeigt.'
+            : 'Base form and selected form are now displayed side by side.'
+    );
+}
+
+async function zurueckZurUrsprungsform(ursprungApiName) {
+    const linksNeuLaden = aktuellesPokemonLinks !== ursprungApiName;
+    schliesseRechts(false);
+
+    if (linksNeuLaden) {
+        aktuellesPokemonLinks = ursprungApiName;
+        await ladePokemonInPanel(ursprungApiName, 'links');
+    }
+
+    const linksTitel = document.querySelector('#modalLinks h3');
+    if (linksTitel) linksTitel.focus();
+    meldeBarrierefreiStatus(
+        aktuelleSprache === 'de'
+            ? 'Zurück zur Einzelansicht der Ursprungsform.'
+            : 'Returned to single view of the base form.'
+    );
+}
+
+async function wechsleFormImModal(ursprungApiName, gewaehlteFormApiName, istDefault, seite) {
+    // Wenn zwei verschiedene Pokémon verglichen werden (z. B. Glurak vs. Turtok),
+    // nur die angeklickte Seite auf die gewählte Form umstellen
+    if (aktuellesPokemonRechts !== null && !istFormenVergleich) {
+        if (seite === 'links') {
+            if (aktuellesPokemonLinks === gewaehlteFormApiName) return;
+            aktuellesPokemonLinks = gewaehlteFormApiName;
+            await ladePokemonInPanel(gewaehlteFormApiName, 'links');
+            const linksTitel = document.querySelector('#modalLinks h3');
+            if (linksTitel) linksTitel.focus();
+        } else {
+            if (aktuellesPokemonRechts === gewaehlteFormApiName) return;
+            aktuellesPokemonRechts = gewaehlteFormApiName;
+            await ladePokemonInPanel(gewaehlteFormApiName, 'rechts');
+            const rechtsTitel = document.querySelector('#modalRechts h3');
+            if (rechtsTitel) rechtsTitel.focus();
+        }
+
+        meldeBarrierefreiStatus(
+            aktuelleSprache === 'de'
+                ? 'Form im Vergleich aktualisiert. Das andere Pokémon bleibt bestehen.'
+                : 'Form updated in comparison. The other Pokémon remains displayed.'
+        );
+        return;
+    }
+
+    // In der Einzelansicht oder im reinen Formen-Vergleich wie gewohnt verhalten
+    if (istDefault) {
+        await zurueckZurUrsprungsform(ursprungApiName);
+    } else {
+        await oeffneFormVergleich(ursprungApiName, gewaehlteFormApiName);
+    }
+}
 async function oeffneGegner(gegnerApiName, quellSeite) {
     const dialog = document.getElementById('pokemonModalDialog');
     const linksPanel = document.getElementById('modalLinks');
     const rechtsPanel = document.getElementById('modalRechts');
 
+    istFormenVergleich = false;
+    aktualisiereModalHeaderZurueckButton(true);
     dialog.classList.add('modal-xl');
     linksPanel.className = 'col-12 col-lg-6';
     rechtsPanel.classList.remove('d-none');
@@ -406,14 +741,26 @@ async function oeffneGegner(gegnerApiName, quellSeite) {
     document.querySelector('#pokemonModal .modal-body').scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function schliesseRechts() {
+function schliesseRechts(fokusAufLinks = true) {
     aktuellesPokemonRechts = null;
+    istFormenVergleich = false;
+    aktualisiereModalHeaderZurueckButton(false);
     document.getElementById('pokemonModalDialog').classList.remove('modal-xl');
     document.getElementById('modalLinks').className = 'col-12';
     const rechtsPanel = document.getElementById('modalRechts');
     rechtsPanel.classList.add('d-none');
     rechtsPanel.innerHTML = '';
     document.getElementById('modalHauptTitel').innerText = 'Pokémon Details';
+
+    if (fokusAufLinks) {
+        const linksTitel = document.querySelector('#modalLinks h3');
+        if (linksTitel) linksTitel.focus();
+        meldeBarrierefreiStatus(
+            aktuelleSprache === 'de'
+                ? 'Vergleich geschlossen. Zurück zur Einzelansicht.'
+                : 'Comparison closed. Returned to single view.'
+        );
+    }
 }
 
 async function ladePokemonInPanel(suchNameAPI, seite) {
@@ -428,8 +775,58 @@ async function ladePokemonInPanel(suchNameAPI, seite) {
         const speciesDaten = await speciesAntwort.json();
 
         const deObj = speciesDaten.names.find(n => n.language.name === 'de');
-        const anzeigeName = aktuelleSprache === 'de' && deObj ? deObj.name : pokemon.name;
-        const bildUrl = pokemon.sprites.other['official-artwork'].front_default;
+        const anzeigeName = aktuelleSprache === 'de' && deObj ? deObj.name : speciesDaten.name;
+        const bildUrl = (pokemon.sprites.other && pokemon.sprites.other['official-artwork'] && pokemon.sprites.other['official-artwork'].front_default)
+            || pokemon.sprites.front_default
+            || '';
+
+        // Sinnvolle Formen & Leiste für weitere Formen aufbauen (ohne Totem-Duplikate)
+        const varianten = holeSinnvolleVarianten(speciesDaten);
+        const ursprungVariante = varianten.find(v => v.is_default) || varianten[0];
+        const ursprungApiName = ursprungVariante ? ursprungVariante.pokemon.name : pokemon.name;
+        const aktuelleVariante = varianten.find(v => v.pokemon.name === pokemon.name);
+        const aktuellesFormLabel = varianten.length > 1
+            ? formatiereFormLabel(pokemon.name, speciesDaten.name, Boolean(aktuelleVariante && aktuelleVariante.is_default))
+            : '';
+
+        const formBadgeHTML = aktuellesFormLabel
+            ? `<div class="mb-2"><span class="badge ${aktuelleVariante && aktuelleVariante.is_default ? 'bg-dark' : 'bg-danger'}">${aktuellesFormLabel}</span></div>`
+            : '';
+
+        // Typ-Badges direkt im Modal anzeigen (wichtig für Formen mit geänderten Typen wie Burmadame)
+        let modalTypHTML = '<div class="d-flex justify-content-center flex-wrap gap-1 mb-2">';
+        pokemon.types.forEach(typInfo => {
+            const eng = typInfo.type.name;
+            const anzeigeTyp = aktuelleSprache === 'de' ? (typUebersetzung[eng] || eng) : eng;
+            modalTypHTML += `<span class="typ-badge typ-${eng} text-capitalize">${anzeigeTyp}</span>`;
+        });
+        modalTypHTML += '</div>';
+
+        // Weitere Formen als barrierefreie Auswahl-Leiste anzeigen
+        let weitereFormenHTML = '';
+        if (varianten.length > 1) {
+            const formenTitel = aktuelleSprache === 'de' ? 'Weitere Formen anzeigen:' : 'Show other forms:';
+            const buttonsHTML = varianten.map(variante => {
+                const formLabel = formatiereFormLabel(variante.pokemon.name, speciesDaten.name, variante.is_default);
+                const istAktiv = variante.pokemon.name === pokemon.name;
+                const klickAktion = `wechsleFormImModal('${ursprungApiName}', '${variante.pokemon.name}', ${Boolean(variante.is_default)}, '${seite}')`;
+
+                return `
+                    <button type="button"
+                            class="btn btn-sm ${istAktiv ? 'btn-danger' : 'btn-outline-dark'}"
+                            ${istAktiv ? 'aria-current="true"' : ''}
+                            onclick="${klickAktion}">
+                        ${formLabel}
+                    </button>`;
+            }).join('');
+
+            weitereFormenHTML = `
+                <div class="bg-light border rounded p-2 mb-3 text-start" role="region" aria-label="${formenTitel}">
+                    <div class="small fw-bold text-muted mb-2">${formenTitel}</div>
+                    <div class="d-flex flex-wrap gap-1">${buttonsHTML}</div>
+                </div>
+            `;
+        }
 
         let infoObj = speciesDaten.flavor_text_entries.find(entry => entry.language.name === aktuelleSprache);
         let fallbackGenutzt = false;
@@ -480,6 +877,58 @@ async function ladePokemonInPanel(suchNameAPI, seite) {
             }
         }
         geschlechtHTML += `<div class="small text-muted mt-1">${geschlechtSatz}</div>`;
+
+// Grösse, Gewicht & Basiswerte als Bootstrap-Fortschrittsbalken (Progress)
+        const groesseMeter = pokemon.height ? (pokemon.height / 10).toFixed(1) : '-';
+        const gewichtKg = pokemon.weight ? (pokemon.weight / 10).toFixed(1) : '-';
+        const groesseText = aktuelleSprache === 'de' ? groesseMeter.replace('.', ',') : groesseMeter;
+        const gewichtText = aktuelleSprache === 'de' ? gewichtKg.replace('.', ',') : gewichtKg;
+
+        let gesamtWert = 0;
+        const statZeilenHTML = (pokemon.stats || []).map(s => {
+            const wert = s.base_stat;
+            gesamtWert += wert;
+            const statKey = s.stat.name;
+            const statLabel = statUebersetzung[statKey]
+                ? statUebersetzung[statKey][aktuelleSprache]
+                : statKey;
+            const prozent = Math.min(100, Math.round((wert / 255) * 100));
+
+            let balkenFarbe = 'bg-danger';
+            if (wert >= 110) {
+                balkenFarbe = 'bg-success';
+            } else if (wert >= 80) {
+                balkenFarbe = 'bg-info';
+            } else if (wert >= 55) {
+                balkenFarbe = 'bg-warning';
+            }
+
+            return `
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="small text-muted text-start" style="width: 95px;">${statLabel}</span>
+                    <span class="small fw-bold text-end" style="width: 32px;">${wert}</span>
+                    <div class="progress flex-grow-1" role="progressbar"
+                         aria-label="${statLabel}: ${wert}"
+                         aria-valuenow="${wert}" aria-valuemin="0" aria-valuemax="255"
+                         style="height: 10px;">
+                        <div class="progress-bar ${balkenFarbe}" style="width: ${prozent}%;"></div>
+                    </div>
+                </div>`;
+        }).join('');
+
+        const basiswerteHTML = `
+            <div class="border rounded p-2 mb-3 text-start">
+                <div class="d-flex justify-content-between align-items-center small text-muted border-bottom pb-1 mb-2">
+                    <span><strong>${aktuelleSprache === 'de' ? 'Grösse' : 'Height'}:</strong> ${groesseText} m</span>
+                    <span><strong>${aktuelleSprache === 'de' ? 'Gewicht' : 'Weight'}:</strong> ${gewichtText} kg</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small fw-bold">${aktuelleSprache === 'de' ? 'Basiswerte' : 'Base Stats'}</span>
+                    <span class="badge bg-dark">${aktuelleSprache === 'de' ? 'Gesamt' : 'Total'}: ${gesamtWert}</span>
+                </div>
+                ${statZeilenHTML}
+            </div>
+        `;
 
         // Fähigkeiten
         let faehigkeitenHTML = '<ul class="list-group list-group-flush">';
@@ -555,7 +1004,7 @@ async function ladePokemonInPanel(suchNameAPI, seite) {
                     <div class="d-flex justify-content-between align-items-center border-bottom pb-1">
                         <span class="typ-badge typ-${engTyp} text-capitalize">${anzeigeTyp}</span>
                         ${gegner ? `
-                            <button class="btn btn-outline-secondary btn-sm py-0 px-2" onclick="oeffneGegner('${gegner.api}', '${seite}')">
+                            <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" onclick="oeffneGegner('${gegner.api}', '${seite}')">
                                 ${aktuelleSprache === 'de' ? 'z.B.' : 'e.g.'} ${gegnerName} ↗
                             </button>` : ''}
                     </div>`;
@@ -565,53 +1014,56 @@ async function ladePokemonInPanel(suchNameAPI, seite) {
         };
 
         const staerkenHTML = `
-            <h6 class="fw-bold text-danger small mb-2">${aktuelleSprache === 'de' ? 'Schwach gegen (2× Schaden):' : 'Weak against (2× damage):'}</h6>
+            <h5 class="fw-bold text-danger small mb-2">${aktuelleSprache === 'de' ? 'Schwach gegen (2× Schaden):' : 'Weak against (2× damage):'}</h5>
             ${baueTypListe(schwaechenSet)}
-            <h6 class="fw-bold text-success small mb-2">${aktuelleSprache === 'de' ? 'Stark gegen (2× Schaden):' : 'Strong against (2× damage):'}</h6>
+            <h5 class="fw-bold text-success small mb-2">${aktuelleSprache === 'de' ? 'Stark gegen (2× Schaden):' : 'Strong against (2× damage):'}</h5>
             ${baueTypListe(staerkenSet)}
         `;
 
-        const schliessenBtn = seite === 'rechts'
-            ? `<button type="button" class="btn-close position-absolute top-0 end-0" aria-label="Vergleich schließen" onclick="schliesseRechts()"></button>`
-            : '';
-
         container.innerHTML = `
             <div class="text-center position-relative">
-                ${schliessenBtn}
-                <h4 class="fw-bold text-capitalize mb-2">${anzeigeName}</h4>
-                <img src="${bildUrl}" alt="${anzeigeName}" class="img-fluid mb-2" style="max-height: 180px;">
+                <h3 class="fw-bold text-capitalize fs-4 mb-1" tabindex="-1">${anzeigeName}</h3>
+                ${formBadgeHTML}
+                <div class="d-flex align-items-center justify-content-center mb-2" style="height: 180px;">
+                    <img src="${bildUrl}" alt="${anzeigeName}${aktuellesFormLabel ? ' – ' + aktuellesFormLabel : ''}" class="img-fluid mh-100">
+                </div>
+                ${modalTypHTML}
                 <div class="mb-2">${geschlechtHTML}</div>
                 <p class="text-muted small fst-italic mb-3">${infoText}</p>
+                ${weitereFormenHTML}
+                ${basiswerteHTML}
+
+                <div class="accordion text-start" id="accordion-${seite}">
 
                 <div class="accordion text-start" id="accordion-${seite}">
                     <div class="accordion-item">
-                        <h2 class="accordion-header">
+                        <h4 class="accordion-header">
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne-${seite}">
                                 ${aktuelleSprache === 'de' ? 'Fähigkeiten & Infos' : 'Abilities & Info'}
                             </button>
-                        </h2>
+                        </h4>
                         <div id="collapseOne-${seite}" class="accordion-collapse collapse" data-bs-parent="#accordion-${seite}">
                             <div class="accordion-body p-0">${faehigkeitenHTML}</div>
                         </div>
                     </div>
 
                     <div class="accordion-item">
-                        <h2 class="accordion-header">
+                        <h4 class="accordion-header">
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo-${seite}">
                                 ${aktuelleSprache === 'de' ? 'Attacken (Auswahl)' : 'Moves (Selection)'}
                             </button>
-                        </h2>
+                        </h4>
                         <div id="collapseTwo-${seite}" class="accordion-collapse collapse" data-bs-parent="#accordion-${seite}">
                             <div class="accordion-body p-0">${attackenHTML}</div>
                         </div>
                     </div>
 
                     <div class="accordion-item">
-                        <h2 class="accordion-header">
+                        <h4 class="accordion-header">
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree-${seite}">
                                 ${aktuelleSprache === 'de' ? 'Stärken & Schwächen' : 'Strengths & Weaknesses'}
                             </button>
-                        </h2>
+                        </h4>
                         <div id="collapseThree-${seite}" class="accordion-collapse collapse" data-bs-parent="#accordion-${seite}">
                             <div class="accordion-body">${staerkenHTML}</div>
                         </div>
@@ -926,7 +1378,7 @@ function aktualisiereTrainerBanner(trainerKey) {
                     </div>
                     <p class="mb-0 fst-italic text-muted small">${zitatText}</p>
                 </div>
-                <button type="button" class="btn btn-outline-secondary btn-sm text-nowrap" 
+                <button type="button" class="btn btn-outline-secondary btn-sm text-nowrap"
                         onclick="document.getElementById('trainer-filter').value=''; ladeTrainerTeam('');">
                     ✕ ${textSchliessen}
                 </button>
@@ -998,6 +1450,15 @@ spracheFilter.addEventListener('change', (event) => {
 if (trainerFilter) {
     trainerFilter.addEventListener('change', (e) => {
         ladeTrainerTeam(e.target.value);
+    });
+}
+
+const pokemonModalEl = document.getElementById('pokemonModal');
+if (pokemonModalEl) {
+    pokemonModalEl.addEventListener('hidden.bs.modal', () => {
+        if (letztesFokusElement && document.body.contains(letztesFokusElement)) {
+            letztesFokusElement.focus();
+        }
     });
 }
 
