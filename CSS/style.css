@@ -1,0 +1,216 @@
+/* Eigene Ergänzungen zu Bootstrap */
+body {
+    font-family: Arial, sans-serif;
+}
+
+/* --- Klassischer Pokémon-Schriftzug (Gelb mit blauem Rand) --- */
+.pokemon-titel {
+    color: #ffcb05 !important; /* Original Pokémon Gelb (überschreibt das Bootstrap-Weiß) */
+    font-weight: 900;
+    letter-spacing: -2px;
+    font-size: 2rem; /* Macht den Titel noch etwas präsenter */
+    
+    /* Die blaue Umrandung */
+    -webkit-text-stroke: 1.5px #3b4cca; /* Original Pokémon Blau */
+    
+    /* Ein zusätzlicher harter Schatten nach unten rechts für den 3D-Look */
+    text-shadow: 3px 3px 0 #3b4cca;
+}
+
+/* --- 3D FLIP-KARTEN LOGIK (Für E8 und E5) --- */
+.pokemon-karte {
+    background-color: transparent;
+    perspective: 1000px; /* Gibt den 3D-Raum für die Drehung vor */
+    height: 280px;
+    cursor: pointer;
+}
+
+.karte-innen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s;
+    transform-style: preserve-3d; /* Wichtig für 3D-Effekt */
+    border-radius: 10px;
+}
+
+/* Wenn das JS die Klasse 'gedreht' hinzufügt, dreht sich die Karte um 180 Grad */
+.pokemon-karte.gedreht .karte-innen {
+    transform: rotateY(180deg);
+}
+
+.karte-vorne, .karte-hinten {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden; /* Versteckt die Rückseite, wenn sie abgewandt ist */
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    background-color: white;
+}
+
+.karte-hinten {
+    transform: rotateY(180deg); /* Startposition der Rückseite */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    border: 2px solid #dc3545; /* Roter Rahmen für die Rückseite */
+}
+
+/* --- Hover-Effekt --- */
+.pokemon-karte:hover .karte-innen {
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+}
+
+.pokemon-bild {
+    height: 120px;
+    object-fit: contain;
+    padding: 10px;
+}
+
+/* --- Typ-Farben (Erweitert für alle Typen) --- */
+.typ-badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: white;
+    margin: 2px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.typ-grass { background-color: #78C850; }
+.typ-fire { background-color: #F08030; }
+.typ-water { background-color: #6890F0; }
+.typ-electric { background-color: #F8D030; }
+.typ-ice { background-color: #98D8D8; }
+.typ-fighting { background-color: #C03028; }
+.typ-poison { background-color: #A040A0; }
+.typ-ground { background-color: #E0C068; }
+.typ-flying { background-color: #A890F0; }
+.typ-psychic { background-color: #F85888; }
+.typ-bug { background-color: #A8B820; }
+.typ-rock { background-color: #B8A038; }
+.typ-ghost { background-color: #705898; }
+.typ-dragon { background-color: #7038F8; }
+.typ-dark { background-color: #705848; }
+.typ-steel { background-color: #B8B8D0; }
+.typ-fairy { background-color: #EE99AC; }
+.typ-normal { background-color: #A8A878; }
+.typ-default { background-color: #A8A878; }
+
+/* --- Interaktive Typ-Buttons (Hover-Effekt) --- */
+.typ-badge-btn {
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.typ-badge-btn:hover,
+.typ-badge-btn:focus {
+    transform: translateY(-3px) scale(1.08);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    outline: none;
+}
+
+/* --- Pulsierende Figur (Performance-optimiert: nur wenn Karte gedreht ist) --- */
+@keyframes pokemonPulsieren {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.12);
+    }
+}
+
+.pulsier-figur {
+    width: 65px;
+    height: 65px;
+    object-fit: contain;
+}
+
+/* Animation läuft NUR auf der aktuell umgedrehten Karte */
+.gedreht .pulsier-figur {
+    animation: pokemonPulsieren 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gedreht .pulsier-figur {
+        animation: none;
+    }
+}
+
+/* --- Dynamischer Entgegenkommen- & Sammelkarten-Effekt --- */
+.pokemon-karte {
+    position: relative;
+    z-index: 1;
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Karte hebt ab und vergrößert sich leicht (nur wenn sie nicht umgedreht ist) */
+.pokemon-karte:not(.gedreht):hover {
+    transform: translateY(-10px) scale(1.04);
+    z-index: 10;
+}
+
+/* Tieferer Schatten und dezenter roter Pokédex-Rahmen beim Hovern */
+.karte-vorne {
+    overflow: hidden;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.pokemon-karte:not(.gedreht):hover .karte-vorne {
+    box-shadow: 0 18px 32px rgba(0, 0, 0, 0.2), 0 0 14px rgba(220, 53, 69, 0.18);
+    border: 1px solid rgba(220, 53, 69, 0.45);
+}
+
+/* Parallax-Effekt: Das Pokémon-Bild kommt zusätzlich leicht nach vorne */
+.pokemon-bild {
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), filter 0.35s ease;
+}
+
+.pokemon-karte:not(.gedreht):hover .pokemon-bild {
+    transform: scale(1.1) translateY(-5px);
+    filter: drop-shadow(0 12px 10px rgba(0, 0, 0, 0.25));
+}
+
+/* Sammelkarten-Glanz: Lichtreflexion gleitet diagonal über die Vorderseite */
+.karte-vorne::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -130%;
+    width: 70%;
+    height: 100%;
+    background: linear-gradient(
+        120deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.45) 50%,
+        transparent 100%
+    );
+    transform: skewX(-25deg);
+    transition: left 0.65s ease;
+    pointer-events: none;
+}
+
+.pokemon-karte:not(.gedreht):hover .karte-vorne::after {
+    left: 150%;
+}
+
+/* Barrierefreiheit: Bewegungen bei aktivierter Systemeinstellung reduzieren */
+@media (prefers-reduced-motion: reduce) {
+    .pokemon-karte,
+    .pokemon-karte:not(.gedreht):hover,
+    .pokemon-bild,
+    .pokemon-karte:not(.gedreht):hover .pokemon-bild {
+        transform: none !important;
+        transition: none !important;
+    }
+    .karte-vorne::after {
+        display: none;
+    }
+}

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokédex Applikation</title>
+    <!-- Bootstrap CSS einbinden -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-light">
+
+    <!-- Semantischer Aufbau: header-->
+    <header class="bg-danger text-white py-3 shadow-sm"> <!-- Header mit Titel und Suchfeld -->
+        <div class="container d-flex justify-content-between align-items-center"> <!-- Flexbox für Titel und Suchfeld -->
+            <h1 class="h3 mb-0 pokemon-titel">Pokédex</h1> <!-- Klassischer Pokémon-Schriftzug -->
+            <input type="text" id="suchfeld" class="form-control w-50 rounded-pill" placeholder="Pokémon suchen..."> <!-- Suchfeld -->
+        </div> <!-- Container für Titel und Suchfeld -->
+    </header> <!-- Ende Header -->
+
+    <!-- Semantischer Aufbau: nav für die Steuerung -->
+    <nav class="container mt-4"> <!-- Navigation für Filter und Sortierung -->
+        <div class="card shadow-sm"> <!-- Filteroptionen -->
+            <div class="card-body d-flex flex-wrap gap-3 justify-content-center"> <!-- Flexbox für Filteroptionen -->
+                <select id="typ-filter" class="form-select w-auto"> <!-- Typ Filter -->
+                    <option value="alle">Alle Typen</option> <!-- Alle Typen -->
+                    <option value="grass">Pflanze</option>
+                    <option value="fire">Feuer</option>
+                    <option value="water">Wasser</option>
+                    <option value="electric">Elektro</option>
+                    <option value="ice">Eis</option>
+                    <option value="fighting">Kampf</option>
+                    <option value="poison">Gift</option>
+                    <option value="ground">Boden</option>
+                    <option value="flying">Flug</option>
+                    <option value="psychic">Psycho</option>
+                    <option value="bug">Käfer</option>
+                    <option value="rock">Gestein</option>
+                    <option value="ghost">Geist</option>
+                    <option value="dragon">Drache</option>
+                    <option value="dark">Unlicht</option>
+                    <option value="steel">Stahl</option>
+                    <option value="fairy">Fee</option>
+                    <option value="normal">Normal</option>
+                </select> <!-- Typ Filter -->
+                
+                <select id="gen-filter" class="form-select w-auto"> <!-- Generation Filter -->
+                    <option value="1">Generation 1 (Kanto)</option>
+                    <option value="2">Generation 2 (Johto)</option>
+                    <option value="3">Generation 3 (Hoenn)</option>
+                    <option value="4">Generation 4 (Sinnoh)</option>
+                    <option value="5">Generation 5 (Einall)</option>
+                    <option value="6">Generation 6 (Kalos)</option>
+                    <option value="7">Generation 7 (Alola)</option>
+                    <option value="8">Generation 8 (Galar)</option>
+                    <option value="9">Generation 9 (Paldea)</option>
+                </select> <!-- Generation Filter -->
+
+               <label for="trainer-filter" class="visually-hidden">Bekannte Trainer-Teams</label>
+                <select class="form-select w-auto" id="trainer-filter" aria-label="Bekannte Trainer-Teams">
+                    <option value="">Bekannte Trainer-Teams</option>
+                    <optgroup label="Helden & Begleiter">
+                        <option value="ash">Ash Ketchum</option>
+                        <option value="misty">Misty</option>
+                        <option value="rocko">Rocko / Brock</option>
+                        <option value="maike">Maike / May</option>
+                        <option value="lucia">Lucia / Dawn</option>
+                    </optgroup>
+                    <optgroup label="Champions & Arenaleiter">
+                        <option value="cynthia">Cynthia (Champ)</option>
+                        <option value="siegfried">Siegfried / Lance (Champ)</option>
+                        <option value="red">Rot / Red</option>
+                        <option value="sabrina">Sabrina</option>
+                    </optgroup>
+                    <optgroup label="Rivalen & Schurken">
+                        <option value="gary">Gary Eich / Oak</option>
+                        <option value="teamRocket">Team Rocket (Jessie & James)</option>
+                        <option value="giovanni">Giovanni (Team Rocket Boss)</option>
+                    </optgroup>
+                </select>
+                <!-- Barrierefreie Sprachauswahl (Zweisprachig & Kompakt) -->
+                <div class="input-group w-auto">
+                    <label class="input-group-text bg-danger text-white border-danger" for="sprache-filter">Sprache / Language</label>
+                    <select class="form-select border-danger" id="sprache-filter" aria-label="Sprache / Language">
+                        <option value="de" selected>Deutsch</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+
+                <button id="sortier-button" class="btn btn-outline-secondary">Sortieren A-Z ↕</button> <!-- Sortierbutton -->
+            </div> <!-- Ende card-body -->
+        </div> <!-- Ende card -->
+    </nav> <!-- Ende Navigation -->
+
+    <!-- Semantischer Aufbau: main und section-->
+    <main class="container mt-4 mb-5"> <!-- Hauptbereich für die Kartenanzeige -->
+        <div id="status-meldung" class="text-center fw-bold fs-5 mb-4">Lade Daten aus der PokéAPI...</div> <!-- Statusmeldung während des Ladens -->
+
+        <div id="trainer-banner" class="mb-4 d-none" aria-live="polite"></div>
+        
+        <!-- Hier werden die Bootstrap CARDS generiert -->
+        <section id="karten-raster" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4"> <!-- Kartenraster für die Pokémon-Karten -->
+            <!-- Karten werden hier per JS eingefügt -->
+        </section> <!-- Ende Kartenraster -->
+    </main> <!-- Ende Hauptbereich -->
+
+   <!-- KOMPONENTE 2: Das Bootstrap MODAL (Detail- & Vergleichsansicht) -->
+    <div class="modal fade" id="pokemonModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable" id="pokemonModalDialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="modalHauptTitel">Pokémon Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-4">
+                        <!-- Linke Seite: Erstes Pokémon -->
+                        <div class="col-12" id="modalLinks"></div>
+                        <!-- Rechte Seite: Vergleichs-Pokémon (startet versteckt) -->
+                        <div class="col-12 col-lg-6 d-none border-start" id="modalRechts"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- KOMPONENTE 4: Modal für Typen-Karten (Einzelansicht & Übersicht) -->
+    <div class="modal fade" id="typModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" id="typModalDialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="typModalTitel">Typ-Info</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                </div>
+                <div class="modal-body" id="typModalInhalt">
+                    <!-- Wird per JS mit der Typ-Karte oder allen 18 Typ-Karten gefüllt -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Bootstrap JS (zwingend für Modal und Accordion) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/skript.js"></script>
+</body>
+</html>
