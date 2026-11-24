@@ -253,6 +253,8 @@ function zeigePokemon(pokemonListe) {
             typHTML += `
                 <button type="button" class="typ-badge typ-badge-btn typ-${eng} text-capitalize" 
                         onclick="event.stopPropagation(); oeffneTypKarte('${eng}')" 
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="bottom"
                         title="${aktuelleSprache === 'de' ? 'Klicken für Typ-Erklärung' : 'Click for type info'}">
                     ${anzeigeTyp}
                 </button>`;
@@ -263,9 +265,13 @@ function zeigePokemon(pokemonListe) {
                 <div class="karte-innen">
                     <!-- VORDERSEITE -->
                     <div class="karte-vorne d-flex flex-column align-items-center justify-content-center">
-                        <img src="${bildUrl}" class="pokemon-bild img-fluid" alt="${anzeigeName}">
-                        <p class="text-muted small mb-1 mt-2">#${String(pokemon.id).padStart(3, '0')}</p>
-                        <h5 class="fw-bold text-capitalize">${anzeigeName}</h5>
+                        <div class="d-flex flex-column align-items-center w-100"
+                            data-bs-toggle="tooltip"
+                            data-bs-title="${aktuelleSprache === 'de' ? 'Klicken um mehr zu erfahren' : 'Click to learn more'}">
+                            <img src="${bildUrl}" class="pokemon-bild img-fluid" alt="${anzeigeName}">
+                            <p class="text-muted small mb-1 mt-2">#${String(pokemon.id).padStart(3, '0')}</p>
+                            <h5 class="fw-bold text-capitalize">${anzeigeName}</h5>
+                        </div>
                         <div>${typHTML}</div>
                     </div>
                     
@@ -287,10 +293,23 @@ function zeigePokemon(pokemonListe) {
         `;
         kartenRaster.appendChild(spalte);
     });
+    // Alte Tooltips entfernen, falls beim Filtern gerade einer offen war
+    document.querySelectorAll('.tooltip').forEach(t => t.remove());
+
+    // Alle Bootstrap-Tooltips im Raster schnell aktivieren
+    kartenRaster.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+        new window.bootstrap.Tooltip(el, {
+            delay: { show: 0, hide: 50 }, // 0ms statt 1-2 Sekunden
+            trigger: 'hover'
+        });
+    });
+
 }
+
 
 // --- E8: Karte drehen und Entwicklungen übersetzt laden ---
 async function dreheKarte(pokemonId, evolutionUrl) {
+    document.querySelectorAll('.tooltip').forEach(t => t.remove());
     const karte = document.getElementById(`karte-${pokemonId}`);
     const container = document.getElementById(`entwicklungen-${pokemonId}`);
 
