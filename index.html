@@ -99,9 +99,9 @@
         <div id="trainer-banner" class="mb-4 d-none" aria-live="polite"></div>
         
         <!-- Hier werden die Bootstrap CARDS generiert -->
-        <section id="karten-raster" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4"> <!-- Kartenraster für die Pokémon-Karten -->
+        <div id="karten-raster" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4"> <!-- Kartenraster für die Pokémon-Karten -->
             <!-- Karten werden hier per JS eingefügt -->
-        </section> <!-- Ende Kartenraster -->
+        </div> <!-- Ende Kartenraster -->
     </main> <!-- Ende Hauptbereich -->
 
    <!-- KOMPONENTE 2: Das Bootstrap MODAL (Detail- & Vergleichsansicht) -->
@@ -109,7 +109,7 @@
         <div class="modal-dialog modal-dialog-scrollable" id="pokemonModalDialog">
             <div class="modal-content">
                 <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title" id="modalHauptTitel">Pokémon Details</h5>
+                    <h2 class="modal-title fs-5" id="modalHauptTitel">Pokémon Details</h2>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schließen"></button>
                 </div>
                 <div class="modal-body">
@@ -128,7 +128,7 @@
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" id="typModalDialog">
             <div class="modal-content">
                 <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title" id="typModalTitel">Typ-Info</h5>
+                    <h2 class="modal-title fs-5" id="typModalTitel">Typ-Info</h2>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schließen"></button>
                 </div>
                 <div class="modal-body" id="typModalInhalt">
